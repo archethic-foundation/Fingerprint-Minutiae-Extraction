@@ -11,7 +11,7 @@ import orientation
 from crossing_number import calculate_minutiaes
 from tqdm import tqdm
 from skeletonize import skeletonize
-
+import pathlib
 
 def f(input_img):
     # normalization -> orientation -> frequency -> mask -> filtering
@@ -75,20 +75,27 @@ def f(input_img):
 
     return results
 
-
 if __name__ == "__main__":
     # open images
-    img_dir = "./input/*"
+    img_dir = "./input/**/*"
     output_dir = "./output/"
 
     def open_images(directory):
         images_paths = glob(directory)
-        return np.array([cv.imread(img_path, 0) for img_path in images_paths])
 
-    images = open_images(img_dir)
+        for i, img_path in enumerate(tqdm(images_paths)):
+            path = pathlib.PurePath(img_path)
+            img = cv.imread(img_path, 0)
+            if img is None:
+                print(f"Failed to load image: {img_path}")
+            else:
+                results = f(img)
+                output_parent_dir = output_dir + path.parent.name
+                # print(output_dir + path.parent.name)
+                if pathlib.Path(output_parent_dir).is_dir() == False:
+                    os.mkdir(output_parent_dir)
 
-    # image pipeline
-    os.makedirs(output_dir, exist_ok=True)
-    for i, img in enumerate(tqdm(images)):
-        results = f(img)
-        cv.imwrite(output_dir + str(i) + ".png", results)
+                if cv.imwrite(output_parent_dir + '/' + path.name, results) == False :
+                    print(f"Failed to load image: {output_parent_dir + '/' + path.name}")
+
+    open_images(img_dir)
